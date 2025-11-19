@@ -1,48 +1,46 @@
 """
-Database Schemas
+Database Schemas for Vendor CRM
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a MongoDB collection. The collection name
+is the lowercase class name. These schemas are returned by GET /schema for
+introspection and are used for validation in API routes.
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, Literal
 
-# Example schemas (replace with your own):
+class Vendor(BaseModel):
+    name: str = Field(..., description="Primary contact full name")
+    email: EmailStr = Field(..., description="Primary contact email")
+    business_name: str = Field(..., description="Registered business name")
+    phone: Optional[str] = Field(None, description="Primary phone number")
+    category: Optional[str] = Field(None, description="Business category or industry")
+    website: Optional[str] = Field(None, description="Business website URL")
+    status: Literal["active", "pending", "suspended"] = Field(
+        "active", description="Vendor account status"
+    )
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Contact(BaseModel):
+    vendor_id: str = Field(..., description="Associated vendor id (string)")
+    name: str = Field(..., description="Contact full name")
+    email: Optional[EmailStr] = Field(None, description="Contact email")
+    phone: Optional[str] = Field(None, description="Contact phone number")
+    role: Optional[str] = Field(None, description="Role or title")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class Deal(BaseModel):
+    vendor_id: str = Field(..., description="Associated vendor id (string)")
+    title: str = Field(..., description="Deal title or summary")
+    value: float = Field(..., ge=0, description="Estimated deal value")
+    stage: Literal[
+        "lead",
+        "qualified",
+        "proposal",
+        "won",
+        "lost",
+    ] = Field("lead", description="Current pipeline stage")
+    notes: Optional[str] = Field(None, description="Additional notes")
 
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Note(BaseModel):
+    vendor_id: str = Field(..., description="Associated vendor id (string)")
+    content: str = Field(..., description="Note content")
+    author: Optional[str] = Field(None, description="Author name or id")
